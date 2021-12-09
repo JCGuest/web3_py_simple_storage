@@ -40,15 +40,15 @@ bytecode = compiled_sol["contracts"]["SimpleStorage.sol"]["SimpleStorage"]["evm"
 abi = compiled_sol["contracts"]["SimpleStorage.sol"]["SimpleStorage"]["abi"]
 
 # connect to local testrpc
-w3 = Web3(Web3.HTTPProvider("HTTP://127.0.0.1:7545"))
-chain_id = 1337
-my_address = "0x83Eb48701044b65e8Cf32D29947659fF7CBc455C"
+w3 = Web3(Web3.HTTPProvider("HTTP://127.0.0.1:8545"))
+chain_id = w3.eth.chainId
+my_address = os.getenv("MY_ADDRESS")
 private_key = os.getenv("PRIVATE_KEY")
 
 # Create contract
 SimpleStorage = w3.eth.contract(abi=abi, bytecode=bytecode)
 nonce = w3.eth.getTransactionCount(my_address)
-# Build, sign and send transaction
+# Build transaction
 transaction = SimpleStorage.constructor().buildTransaction(
     {
         "gasPrice": w3.eth.gas_price,
@@ -57,7 +57,12 @@ transaction = SimpleStorage.constructor().buildTransaction(
         "nonce": nonce,
     }
 )
+# Sign transaction
 signed_txn = w3.eth.account.signTransaction(transaction, private_key)
+# Send transaction
 tx_hash = w3.eth.sendRawTransaction(signed_txn.rawTransaction)
+tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
 
-print(simple_storage_file.functions.retrieve().call())
+# Working with contract
+simple_storage = w3.eth.contract(address=tx_receipt.contractAddress, abi=abi)
+print(simple_storage.functions.retrieve())
