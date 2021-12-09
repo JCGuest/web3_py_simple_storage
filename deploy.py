@@ -65,4 +65,19 @@ tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
 
 # Working with contract
 simple_storage = w3.eth.contract(address=tx_receipt.contractAddress, abi=abi)
-print(simple_storage.functions.retrieve())
+
+# initial value of favorite number
+print(simple_storage.functions.retrieve().call())
+
+store_txn = simple_storage.functions.store(42).buildTransaction(
+    {
+        "chainId": chain_id,
+        "from": my_address,
+        "gasPrice": w3.eth.gas_price,
+        "nonce": nonce + 1,
+    }
+)
+signed_store_txn = w3.eth.account.signTransaction(store_txn, private_key)
+send_strore_txn = w3.eth.sendRawTransaction(signed_store_txn.rawTransaction)
+txn_receipt = w3.eth.waitForTransactionReceipt(send_strore_txn)
+print(txn_receipt)
